@@ -6,106 +6,77 @@
  * @flow strict-local
  */
 
-import React from 'react';
-import type {Node} from 'react';
+import React, { useState } from 'react';
+
 import {
   SafeAreaView,
-  ScrollView,
+  FlatList,
   StatusBar,
+  Button,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
+  TextInput
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
 
-const Section = ({children, title}): Node => {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-};
-
-const App: () => Node = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+const App = () => {
+  let status= 'No scanner connected';
+  const [decodedData, setDecodedData] = useState({data: '', length: 0, name: ''});
+  const [decodedDataList, setDecodedDataList] = useState([
+    {data: '1233243242123', length: 13, name: 'EAN13', id: 1},
+    {data: '033453243244', length: 12, name: 'UPC-A', id: 2},
+    {data: '1233243242123', length: 13, name: 'EAN13', id: 3},
+    {data: '1233243242123', length: 13, name: 'EAN13', id: 4},
+    {data: '033453243244', length: 12, name: 'UPC-A', id: 5},
+    {data: '033453243244', length: 12, name: 'UPC-A', id: 6},
+    {data: '1233243242123', length: 13, name: 'EAN13', id: 7},
+    {data: '1233243242123', length: 13, name: 'EAN13', id: 8},
+    {data: '033453243244', length: 12, name: 'UPC-A', id: 9},
+  ]);
+  const clearHandler = () => {
+    setDecodedDataList([]);
   };
-
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.status}>
+        <Text style={styles.title}>Status: {status}</Text>
+      </View>
+      <TextInput style={styles.input} value={decodedData.data}/>
+      <FlatList 
+        keyExtractor = {(item) => item.id}
+        data = {decodedDataList}
+        renderItem = {({item}) =>(
+          <View>
+            <Text>{item.name} ({item.length}) {item.data}</Text>
+          </View>
+        )}
+      />
+      <Button title="Clear" onPress={clearHandler}/>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    backgroundColor: '#aaa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: 'red',
+    borderWidth: 3
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  status:{
+    padding: 30
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  title: {
+    fontWeight: 'bold',
   },
-  highlight: {
-    fontWeight: '700',
+  input: {
+    width: '80%',
+    height: 40,
+    margin: 12,
+    borderWidth: 1,
   },
 });
 
