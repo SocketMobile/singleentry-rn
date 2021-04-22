@@ -35,13 +35,21 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Bluetooth is required to connect to Socket Mobile device</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Bluetooth is required to connect to Socket Mobile devices</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Bluetooth is required to connect to Socket Mobile device</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>armv7</string>
+	</array>
+	<key>UISupportedExternalAccessoryProtocols</key>
+	<array>
+		<string>com.socketmobile.chs</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
