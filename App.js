@@ -19,6 +19,10 @@ import {
 } from 'react-native';
 
 import {CaptureRn, CaptureEventIds} from 'beta-react-native-capture';
+function arrayToString(dataArray) {
+  return String.fromCharCode.apply(null, dataArray);
+}
+
 class MyLogger {
   log(message, arg) {
     console.log('SingleEntryRN: ' + message, arg);
@@ -27,6 +31,12 @@ class MyLogger {
 
 const myLogger = new MyLogger();
 const capture = new CaptureRn(myLogger);
+let dataId = 10;
+let lastDecodedData = {
+  name: '',
+  length: 0,
+  data: '',
+};
 
 const App = () => {
   const onCaptureEvent = useCallback(
@@ -56,7 +66,8 @@ const App = () => {
             return;
           }
           setDevices(devices.filter(d => d.guid !== e.value.guid));
-          removeDevice
+          console.log('removeDevice: ', removeDevice);
+          removeDevice.device
             .close()
             .then(result => {
               console.log('closing a device returns: ', result);
@@ -66,6 +77,23 @@ const App = () => {
               console.log(`error closing a device: ${err.message}`);
               setStatus(`error closing a device: ${err}`);
             });
+          break;
+        case CaptureEventIds.DecodedData:
+          console.log('previous decoded data: ', lastDecodedData);
+          if (lastDecodedData.length) {
+            setDecodedDataList(prevList => {
+              const newDecodedData = {...lastDecodedData};
+              newDecodedData.id = dataId++;
+              console.log('new decoded data id: ', newDecodedData.id);
+              return [newDecodedData, ...prevList];
+            });
+          }
+          lastDecodedData = {
+            data: arrayToString(e.value.value),
+            length: e.value.value.length,
+            name: e.value.dataSource.name,
+          };
+          setDecodedData(lastDecodedData);
           break;
       }
     },
@@ -84,7 +112,7 @@ const App = () => {
   }, []);
   const [devices, setDevices] = useState([{}]);
   const [status, setStatus] = useState('No scanner connected');
-  const [decodedData] = useState({
+  const [decodedData, setDecodedData] = useState({
     data: '',
     length: 0,
     name: '',
@@ -128,14 +156,20 @@ const App = () => {
       <View style={styles.status}>
         <Text style={styles.title}>Status: {status}</Text>
       </View>
-      <TextInput style={styles.input} value={decodedData.data} />
+      <TextInput
+        style={styles.input}
+        value={`${decodedData.name.toUpperCase()} (${decodedData.length}): ${
+          decodedData.data
+        }`}
+        editable={false}
+      />
       <FlatList
         keyExtractor={item => item.id}
         data={decodedDataList}
         renderItem={({item}) => (
           <View>
             <Text>
-              {item.name} ({item.length}) {item.data}
+              {item.name.toUpperCase()} ({item.length}) {item.data}
             </Text>
           </View>
         )}
