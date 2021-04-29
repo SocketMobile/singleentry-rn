@@ -89,9 +89,9 @@ const App = () => {
             });
           }
           lastDecodedData = {
-            data: arrayToString(e.value.value),
-            length: e.value.value.length,
-            name: e.value.dataSource.name,
+            data: arrayToString(e.value.data),
+            length: e.value.data.length,
+            name: e.value.name,
           };
           setDecodedData(lastDecodedData);
           break;
