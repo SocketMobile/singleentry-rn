@@ -1,6 +1,6 @@
 /**
  * Sample React Native App
- * https://github.com/facebook/react-native
+ * https://github.com/socketmobile/SingleEntryRN
  *
  * @format
  * @flow strict-local
@@ -18,19 +18,27 @@ import {
   TextInput,
 } from 'react-native';
 
-import {CaptureRn, CaptureEventIds} from 'beta-react-native-capture';
+import {CaptureRn, CaptureEventIds, SktErrors, CaptureEventTypes, CaptureEvent, CaptureDataSourceID, CaptureDeviceType} from 'beta-react-native-capture';
 function arrayToString(dataArray) {
   return String.fromCharCode.apply(null, dataArray);
 }
 
+// The logger can help to troubleshoot the communication
+// with Capture, this is totally optional and CaptureRn
+// can be instantiated directly without any argument
 class MyLogger {
   log(message, arg) {
+    arg = arg !== undefined ? arg : '';
     console.log('SingleEntryRN: ' + message, arg);
+  }
+  error(message, arg) {
+    arg = arg !== undefined ? arg : '';
+    console.error('SingleEntryRN: ' + message, arg);
   }
 }
 
 const myLogger = new MyLogger();
-const capture = new CaptureRn(myLogger);
+const capture = new CaptureRn();
 let dataId = 10;
 let lastDecodedData = {
   name: '',
@@ -40,51 +48,108 @@ let lastDecodedData = {
 
 const App = () => {
   const onCaptureEvent = useCallback(
-    e => {
+    (e, handle) => {
       if (!e) {
         return;
       }
-      console.log('onCaptureEvent: ', e);
+      myLogger.log(`onCaptureEvent from ${handle}: `, e);
       switch (e.id) {
+        // **********************************
+        // Device Arrival Event
+        //   a device needs to be opened in
+        //   to receive the decoded data
+        //  e = {
+        //    id: CaptureEventIds.DeviceArrival,
+        //    type: CaptureEventTypes.DeviceInfo,
+        //    value: {
+        //      guid: "b876d9a8-85b6-1bb5-f1f6-1bb5d78a2c6e",
+        //      name: "Socket S740 [E2ABB4]",
+        //      type: CaptureDeviceType.ScannerS740
+        //    }
+        //  }
+        // **********************************
         case CaptureEventIds.DeviceArrival:
           const newDevice = new CaptureRn();
+          const {guid, name} = e.value;
           newDevice
-            .openDevice(e.value.guid, capture)
+            .openDevice(guid, capture)
             .then(result => {
-              console.log('opening a device returns: ', result);
-              setStatus(`result of opening a device: ${result}`);
-              setDevices(devices.push({guid: e.value.guid, device: newDevice}));
+              myLogger.log('opening a device returns: ', result);
+              setStatus(`result of opening ${e.value.name} : ${result}`);
+              setDevices(prevDevices => {
+                prevDevices = prevDevices || [];
+                prevDevices.push({
+                  guid,
+                  name,
+                  handle: newDevice.clientOrDeviceHandle,
+                  device: newDevice,
+                });
+                return [...prevDevices];
+              });
             })
             .catch(err => {
-              console.log(err);
+              myLogger.log(err);
               setStatus(`error opening a device: ${err}`);
             });
           break;
+        // **********************************
+        // Device Removal Event
+        //   it is better to close the device
+        //  e = {
+        //    id: CaptureEventIds.DeviceRemoval,
+        //    type: CaptureEventTypes.DeviceInfo,
+        //    value: {
+        //      guid: "b876d9a8-85b6-1bb5-f1f6-1bb5d78a2c6e",
+        //      name: "Socket S740 [E2ABB4]",
+        //      type: CaptureDeviceType.ScannerS740
+        //    }
+        //  }
+        // **********************************
         case CaptureEventIds.DeviceRemoval:
           const removeDevice = devices.find(d => d.guid === e.value.guid);
           if (!removeDevice) {
+            myLogger.log(`no matching devices found for ${e.value.name}`);
             return;
           }
-          setDevices(devices.filter(d => d.guid !== e.value.guid));
-          console.log('removeDevice: ', removeDevice);
+          setDevices(prevDevices => {
+            prevDevices = prevDevices.filter(d => d.guid !== e.value.guid);
+            return prevDevices;
+          });
+          myLogger.log('removeDevice: ', removeDevice.name);
           removeDevice.device
             .close()
             .then(result => {
-              console.log('closing a device returns: ', result);
-              setStatus(`result of closing a device: ${result}`);
+              myLogger.log('closing a device returns: ', result);
+              setStatus(`result of closing ${removeDevice.name}: ${result}`);
             })
             .catch(err => {
-              console.log(`error closing a device: ${err.message}`);
+              myLogger.log(`error closing a device: ${err.message}`);
               setStatus(`error closing a device: ${err}`);
             });
           break;
+        // **********************************
+        // Decoded Data
+        //   receive the decoded data from
+        //   a specific device
+        //  e = {
+        //    id: CaptureEventIds.DecodedData,
+        //    type: CaptureEventTypes.DecodedData,
+        //    value: {
+        //      data: [55, 97, 100, 57, 53, 100, 97, 98, 48, 102, 102, 99, 52, 53, 57, 48, 97, 52, 57, 54, 49, 97, 51, 49, 57, 50, 99, 49, 102, 51, 53, 55],
+        //      id: CaptureDataSourceID.SymbologyQRCode,
+        //      name: "QR Code"
+        //    }
+        //  }
+        // **********************************
         case CaptureEventIds.DecodedData:
-          console.log('previous decoded data: ', lastDecodedData);
+          const deviceSource = devices.find(d => d.handle === handle);
+          if (deviceSource) {
+            setStatus(`decoded data from: ${deviceSource.name}`);
+          }
           if (lastDecodedData.length) {
             setDecodedDataList(prevList => {
               const newDecodedData = {...lastDecodedData};
               newDecodedData.id = dataId++;
-              console.log('new decoded data id: ', newDecodedData.id);
               return [newDecodedData, ...prevList];
             });
           }
@@ -100,34 +165,24 @@ const App = () => {
     [devices],
   );
   const closeCapture = useCallback(() => {
-    console.log('close Capture');
+    myLogger.log('close Capture');
     capture
       .close()
       .then(result => {
-        console.log('Success in closing Capture: ', result);
+        myLogger.log('Success in closing Capture: ', result);
       })
       .catch(err => {
-        console.log(`failed to close Capture: ${err}`);
+        myLogger.log(`failed to close Capture: ${err}`);
       });
   }, []);
-  const [devices, setDevices] = useState([{}]);
-  const [status, setStatus] = useState('No scanner connected');
+  const [devices, setDevices] = useState([]);
+  const [status, setStatus] = useState('Opening Capture...');
   const [decodedData, setDecodedData] = useState({
     data: '',
     length: 0,
     name: '',
   });
-  const [decodedDataList, setDecodedDataList] = useState([
-    {data: '1233243242123', length: 13, name: 'EAN13', id: 1},
-    {data: '033453243244', length: 12, name: 'UPC-A', id: 2},
-    {data: '1233243242123', length: 13, name: 'EAN13', id: 3},
-    {data: '1233243242123', length: 13, name: 'EAN13', id: 4},
-    {data: '033453243244', length: 12, name: 'UPC-A', id: 5},
-    {data: '033453243244', length: 12, name: 'UPC-A', id: 6},
-    {data: '1233243242123', length: 13, name: 'EAN13', id: 7},
-    {data: '1233243242123', length: 13, name: 'EAN13', id: 8},
-    {data: '033453243244', length: 12, name: 'UPC-A', id: 9},
-  ]);
+  const [decodedDataList, setDecodedDataList] = useState([]);
 
   useEffect(() => {
     const appInfo = {
@@ -142,8 +197,13 @@ const App = () => {
         setStatus('capture open success');
       })
       .catch(err => {
-        console.error(err);
+        myLogger.error(err);
         setStatus(`failed to open Capture: ${err}`);
+        // this is mostly for Android platform which requires
+        // Socket Mobile Companion app to be installed
+        if (err === SktErrors.ESKT_UNABLEOPENDEVICE) {
+          setStatus('Is Socket Mobile Companion app installed?');
+        }
       });
     return closeCapture;
   }, [closeCapture, onCaptureEvent]);
@@ -199,6 +259,7 @@ const styles = StyleSheet.create({
     height: 40,
     margin: 12,
     borderWidth: 1,
+    color: 'black',
   },
 });
 
