@@ -1825,8 +1825,10 @@ beta-capturejs@^0.5.0:
   resolved "https://registry.yarnpkg.com/beta-capturejs/-/beta-capturejs-0.5.0.tgz#84ae5e530256c6b623f537441a518d6ed56c4a4a"
   integrity sha512-WQOahWIUHQZGbuRnunr1//W0Mde306YjDAsoKSPYNJn1wu7Z9Fj7Sbf5JYranZC4cW3Jockfvq/SLTlLZ739/w==
 
-beta-react-native-capture@../react-native-capture:
-  version "0.5.0"
+beta-react-native-capture@^0.8.5:
+  version "0.8.5"
+  resolved "https://registry.yarnpkg.com/beta-react-native-capture/-/beta-react-native-capture-0.8.5.tgz#a189f0ba2144a6ab4ec2e8ac8915a24e4e4044a8"
+  integrity sha512-lX29oBhQR8VN295j7l8v8KV31yJRDuXnvbMUPk+Sd3QXJaew+SlP7szDwsl2jcEP8mApw9DOIEQGib+KWvav0w==
   dependencies:
     beta-capturejs "^0.5.0"
 
