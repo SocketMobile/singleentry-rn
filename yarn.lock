@@ -1820,18 +1820,6 @@ bcrypt-pbkdf@^1.0.0:
   dependencies:
     tweetnacl "^0.14.3"
 
-beta-capturejs@^0.5.0:
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/beta-capturejs/-/beta-capturejs-0.5.0.tgz#84ae5e530256c6b623f537441a518d6ed56c4a4a"
-  integrity sha512-WQOahWIUHQZGbuRnunr1//W0Mde306YjDAsoKSPYNJn1wu7Z9Fj7Sbf5JYranZC4cW3Jockfvq/SLTlLZ739/w==
-
-beta-react-native-capture@^0.8.5:
-  version "0.8.5"
-  resolved "https://registry.yarnpkg.com/beta-react-native-capture/-/beta-react-native-capture-0.8.5.tgz#a189f0ba2144a6ab4ec2e8ac8915a24e4e4044a8"
-  integrity sha512-lX29oBhQR8VN295j7l8v8KV31yJRDuXnvbMUPk+Sd3QXJaew+SlP7szDwsl2jcEP8mApw9DOIEQGib+KWvav0w==
-  dependencies:
-    beta-capturejs "^0.5.0"
-
 big-integer@^1.6.44:
   version "1.6.48"
   resolved "https://registry.yarnpkg.com/big-integer/-/big-integer-1.6.48.tgz#8fd88bd1632cba4a1c8c3e3d7159f08bb95b4b9e"
@@ -5843,6 +5831,13 @@ react-is@^16.8.1:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
+react-native-capture@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/react-native-capture/-/react-native-capture-1.0.0.tgz#442bc6a3d4c6fb8935e2640aa4d70d05615a8cb5"
+  integrity sha512-HYzr4wwWfpoKmE1OsIZS8h96ywXOKEFccpK+T4olPc5m00ncOQm3uVAN83KensW2ZafmPfDx2olWkQenK0V8LQ==
+  dependencies:
+    socketmobile-capturejs "^1.0.1"
+
 react-native-codegen@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/react-native-codegen/-/react-native-codegen-0.0.6.tgz#b3173faa879cf71bfade8d030f9c4698388f6909"
@@ -6524,6 +6519,11 @@ snapdragon@^0.8.1:
     source-map "^0.5.6"
     source-map-resolve "^0.5.0"
     use "^3.1.0"
+
+socketmobile-capturejs@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/socketmobile-capturejs/-/socketmobile-capturejs-1.0.1.tgz#acdc7dc0104648165d8c37135d5f4fc78355268d"
+  integrity sha512-Ps2GKUDJpnd3HNetW9kb9EvUo8HJYaHo/dg3Yf0bhhto1PAw4sdBbLoF+G6fC94EryLaX9c6wsLUoHWqJ2RscA==
 
 source-map-resolve@^0.5.0:
   version "0.5.3"

@@ -18,7 +18,7 @@ import {
   TextInput,
 } from 'react-native';
 
-import {CaptureRn, CaptureEventIds, SktErrors, CaptureEventTypes, CaptureEvent, CaptureDataSourceID, CaptureDeviceType} from 'beta-react-native-capture';
+import {CaptureRn, CaptureEventIds, SktErrors, CaptureEventTypes, CaptureEvent, CaptureDataSourceID, CaptureDeviceType} from 'react-native-capture';
 function arrayToString(dataArray) {
   return String.fromCharCode.apply(null, dataArray);
 }
