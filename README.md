@@ -204,7 +204,9 @@ yarn install
 Then make sure **Metro** is running before launching the app especially if you want to run the application in debug.
 For that, go to the project root and run metro:
 `cd  singleentry-rn`
-`react-native start` if you have **react-native** installed globally or `npx react-native start` otherwise.
+`yarn start`
+
+Then either `yarn android` or `yarn ios` OR you can run it through Xcode. 
 
 ### Android Debugging
 

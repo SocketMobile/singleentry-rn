@@ -23,6 +23,14 @@ function arrayToString(dataArray) {
   return String.fromCharCode.apply(null, dataArray);
 }
 
+const appInfo = {
+  appIdIos: 'ios:com.socketmobile.SingleEntryRN',
+  appIdAndroid: 'android:com.socketmobile.SingleEntryRN',
+  developerId: 'ecc6c526-970b-ec11-b6e6-0022480a2304',
+  appKeyIos: 'MC0CFQDtJ9ja8/cOcZcTAyHRc272RhoxvgIUCzlrizAAtsYpTRLtsKjTigfgUPM=',
+  appKeyAndroid: 'MC4CFQC+LzcQliEWpU/Y3GM8BmaFByU/OgIVAOKUeOKQG1gTErts72iibgzjpcGq',
+};
+
 // The logger can help to troubleshoot the communication
 // with Capture, this is totally optional and CaptureRn
 // can be instantiated directly without any argument
@@ -40,6 +48,7 @@ class MyLogger {
 const myLogger = new MyLogger();
 const capture = new CaptureRn();
 let dataId = 10;
+
 let lastDecodedData = {
   name: '',
   length: 0,
@@ -106,7 +115,9 @@ const App = () => {
         //  }
         // **********************************
         case CaptureEventIds.DeviceRemoval:
+          console.log(e.value.guid);
           const removeDevice = devices.find(d => d.guid === e.value.guid);
+         
           if (!removeDevice) {
             myLogger.log(`no matching devices found for ${e.value.name}`);
             return;
@@ -142,6 +153,7 @@ const App = () => {
         //  }
         // **********************************
         case CaptureEventIds.DecodedData:
+          console.log('ayyyy')
           const deviceSource = devices.find(d => d.handle === handle);
           if (deviceSource) {
             setStatus(`decoded data from: ${deviceSource.name}`);
@@ -175,30 +187,28 @@ const App = () => {
         myLogger.log(`failed to close Capture: ${err}`);
       });
   }, []);
+
   const [devices, setDevices] = useState([]);
   const [status, setStatus] = useState('Opening Capture...');
+
   const [decodedData, setDecodedData] = useState({
     data: '',
     length: 0,
     name: '',
   });
+
   const [decodedDataList, setDecodedDataList] = useState([]);
 
   useEffect(() => {
-    const appInfo = {
-      appId: 'web:com.socketmobile.SingleEntryRN',
-      developerId: 'bb57d8e1-f911-47ba-b510-693be162686a',
-      appKey:
-        'MC4CFQCcoE4i6nBXLRLKVkx8jwbEnzToWAIVAJdfJOE3U+5rUcrRGDLuXWpz0qgu',
-    };
     capture
       .open(appInfo, onCaptureEvent)
       .then(() => {
         setStatus('capture open success');
       })
       .catch(err => {
-        myLogger.error(err);
-        setStatus(`failed to open Capture: ${err}`);
+        myLogger.error(err)
+        var msg = err.error || err
+        setStatus(`failed to open Capture: ${msg}`);
         // this is mostly for Android platform which requires
         // Socket Mobile Companion app to be installed
         if (err === SktErrors.ESKT_UNABLEOPENDEVICE) {
@@ -211,10 +221,12 @@ const App = () => {
   const clearHandler = () => {
     setDecodedDataList([]);
   };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.status}>
-        <Text style={styles.title}>Status: {status}</Text>
+        <Text style={styles.title}>Scanner Test</Text>
+        <Text>Status: {status}</Text>
       </View>
       <TextInput
         style={styles.input}
@@ -223,17 +235,20 @@ const App = () => {
         }`}
         editable={false}
       />
-      <FlatList
+      {decodedDataList.length > 0 
+        ? <FlatList
         keyExtractor={item => item.id}
         data={decodedDataList}
         renderItem={({item}) => (
           <View>
             <Text>
-              {item.name.toUpperCase()} ({item.length}) {item.data}
+              {item.name.toUpperCase()} {item.length ? '(' + item.length + ')' : null} {item.data ? item.data : null}
             </Text>
           </View>
         )}
       />
+       : <Text>NO RESULTS</Text>
+      }
       <Button title="Clear" onPress={clearHandler} />
     </SafeAreaView>
   );
