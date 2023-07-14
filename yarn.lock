@@ -5866,12 +5866,12 @@ react-is@^16.8.1:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
-react-native-capture@1.3.36:
-  version "1.3.36"
-  resolved "https://registry.yarnpkg.com/react-native-capture/-/react-native-capture-1.3.36.tgz#63572a3a3e03b1094cc54977e657693b4ba2ef33"
-  integrity sha512-Mvjva8qdeQo7m3s69EtMy7a6zm6IKV6D4X/Llh0CUsI5H5TD0zR3kzrph8F6lrK+yMPKCVfr/kMMyQDE071ftQ==
+react-native-capture@1.4.17:
+  version "1.4.17"
+  resolved "https://registry.yarnpkg.com/react-native-capture/-/react-native-capture-1.4.17.tgz#fb6b488d5c4fedac4a83d5e8971b4372940f4e11"
+  integrity sha512-GJD1ZTrAx05iLLJVmSZRaRRgLAUKFoZSVHYOZHl3O4vKq7AKCJQcZ7DK2ZO3Kmpou6eGlaJz4o4s3AS6rP0s5A==
   dependencies:
-    socketmobile-capturejs "^1.3.12"
+    socketmobile-capturejs "^1.3.26"
 
 react-native-codegen@^0.0.6:
   version "0.0.6"
@@ -6555,10 +6555,10 @@ snapdragon@^0.8.1:
     source-map-resolve "^0.5.0"
     use "^3.1.0"
 
-socketmobile-capturejs@^1.3.12:
-  version "1.3.16"
-  resolved "https://registry.yarnpkg.com/socketmobile-capturejs/-/socketmobile-capturejs-1.3.16.tgz#86dd4fd1d8843fcc06d61e7504a2fb45fd9646d8"
-  integrity sha512-LnCM+QvgLIcKSAJH6HXIQ0PcOx1oguQAexEo0UNQBFGvSNOy0j3AkbFFxrbK4U46nOFMWD4Hddyz1s5ASyN0Yw==
+socketmobile-capturejs@^1.3.26:
+  version "1.3.26"
+  resolved "https://registry.yarnpkg.com/socketmobile-capturejs/-/socketmobile-capturejs-1.3.26.tgz#e30b3b8aa2e3304cd4302c41a0fed39632237452"
+  integrity sha512-fqSjxpqEssj9IrD26sQVA8R1j4BB/9uLZR6e6/zwyG8pxQO3YKf2bnjTVTBeCqtxpJOsEncxz4gQqoO4m7ImSg==
   dependencies:
     xhr "^2.6.0"
 
