@@ -6,14 +6,6 @@ It shows how to use the Socket Mobile CaptureJS SDK to receive the decoded data 
 
 The connection state of the Socket Mobile device is shown in a status field at the top of the app.
 
-## Screenshots
-
-On iOS iPad in landscape orientation:
-![iPad Landscape](./img/iPad-landscape.jpeg "SingleEntryRN on iPad landscape orientation")
-
-On Android Tablet in landscape orientation:
-![Android Landscape](./img/Android-landscape.png "SingleEntryRN on Android Tablet landscape orientation")
-
 ## Install
 
 In a terminal window type the following commands:
@@ -42,9 +34,6 @@ then make sure the **iOS** portion of the application is setup correctly by typi
 cd ios
 pod install
 ```
-
-On Android when the Android project is loaded in the Android Studio, the gradle task `InstallDebug` or `InstallRelease` as shown in this picture:
-![Android Studio Gradle](./img/android-gradle.png "Android Studio Gradle panel")
 
 ### Android
 
@@ -165,13 +154,6 @@ Here is an example for handling the decoded data:
           if (deviceSource) {
             setStatus(`decoded data from: ${deviceSource.name}`);
           }
-          if (lastDecodedData.length) {
-            setDecodedDataList(prevList => {
-              const newDecodedData = {...lastDecodedData};
-              newDecodedData.id = dataId++;
-              return [newDecodedData, ...prevList];
-            });
-          }
           lastDecodedData = {
             data: arrayToString(e.value.data),
             length: e.value.data.length,
@@ -214,11 +196,3 @@ In an Android environment in order to have the Android device being able to reac
 `adb reverse tcp:8081 tcp:8081`
 
 Usually this command prints out `8081` when it succeeds.
-
-### iOS Debugging
-
-In iOS the Pod file needs to be installed. This should come after making sure that the React Native Capture NPM package is present in the `node_modules` folder of SingleEntryRN.
-
-If that the case you may have to delete the `Pods` folder under the `ios` subdirector and re-run a `pod install` within the `ios` subdirectory.
-
-This should re-install the React Native Capture cocoapods.

@@ -1,6 +1,13 @@
 import React, {useState, useEffect, useRef} from 'react';
 
-import {SafeAreaView, StyleSheet, Text, View, TextInput} from 'react-native';
+import {
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  Platform,
+} from 'react-native';
 
 import {
   CaptureRn,
@@ -10,17 +17,44 @@ import {
   CaptureProperty,
   CapturePropertyIds,
   CapturePropertyTypes,
+  CaptureEvent,
+  JRpcError,
+  type AppInfoRn,
+  type DeviceGuidMap,
+  type DecodedData,
+  type SocketLogger,
+  type Notification,
+  type CaptureDeviceInfo,
 } from 'react-native-capture';
 
-import SocketCam from './src/components/SocketCam.js';
-import Footer from './src/components/Footer.js';
-import MainView from './src/components/MainView.js';
+import SocketCam from './components/SocketCam';
+import MainView from './components/MainView';
 
-function arrayToString(dataArray) {
-  return String.fromCharCode.apply(null, dataArray);
+interface StateData {
+  devices: CaptureDeviceInfo[];
+  deviceCapture: CaptureRn | null;
+  bleDeviceManagerCapture: CaptureRn | null;
+  socketCamDevice: CaptureDeviceInfo | null;
+  deviceGuidMap: DeviceGuidMap;
+  isContinuousTrigger: boolean;
+  isAndroid: boolean;
 }
 
-const resToString = res => {
+const initialState: StateData = {
+  devices: [],
+  deviceCapture: null,
+  bleDeviceManagerCapture: null,
+  socketCamDevice: null,
+  deviceGuidMap: {},
+  isContinuousTrigger: false,
+  isAndroid: false,
+};
+
+const arrayToString = (dataArray: number[]) => {
+  return String.fromCharCode.apply(null, dataArray);
+};
+
+const resToString = (res: any) => {
   return JSON.stringify(res, null, 4);
 };
 
@@ -36,67 +70,69 @@ const appInfo = {
 // The logger can help to troubleshoot the communication
 // with Capture, this is totally optional and CaptureRn
 // can be instantiated directly without any argument
-class MyLogger {
-  log(message, arg) {
+const myLogger: SocketLogger = {
+  log(message: string, arg?: any) {
     arg = arg !== undefined ? arg : '';
     console.log('SingleEntryRN: ' + message, arg);
-  }
-  error(message, arg) {
+  },
+  error(message: string, arg?: any) {
     arg = arg !== undefined ? arg : '';
     console.error('SingleEntryRN: ' + message, arg);
-  }
-}
+  },
+};
 
-const myLogger = new MyLogger();
-
-let lastDecodedData = {
+let lastDecodedData: DecodedData = {
   name: '',
   length: 0,
   data: '',
+  id: -1,
 };
 
 const App = () => {
-  const [capture, setCapture] = useState(new CaptureRn());
-  const [useSocketCam, setUseSocketCam] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
-  const [devices, setDevices] = useState([]);
+  const [capture] = useState(new CaptureRn());
+  const [useSocketCam, setUseSocketCam] = useState<boolean>(false);
+  const [devices, setDevices] = useState<CaptureDeviceInfo[]>([]);
   // deviceGuidMap is used to keep track of devices already
   // added to the list; meant to prevent adding a device twice
-  const [deviceGuidMap, setDeviceGuidMap] = useState({});
-  const [batteryLevel, setBatteryLevel] = useState('0%');
-  const [status, setStatus] = useState('Opening Capture...');
-  const [decodedData, setDecodedData] = useState({
+  const [deviceGuidMap, setDeviceGuidMap] = useState<DeviceGuidMap>({});
+  const [status, setStatus] = useState<string>('Opening Capture...');
+  const [decodedData, setDecodedData] = useState<DecodedData>({
     data: '',
     length: 0,
     name: '',
   });
-  const [decodedDataList, setDecodedDataList] = useState([]);
-  const [deviceCapture, setDeviceCapture] = useState(null);
-  const [bleDeviceManagerCapture, setBleDeviceManagerCapture] = useState(null);
-  const [newName, setNewName] = useState('');
-  const [socketcamDevice, setSocketCamDevice] = useState(null);
-  const [socketCamHandle, setSocketCamHandle] = useState(0);
+  const [deviceCapture, setDeviceCapture] = useState<CaptureRn | null>(null);
+  const [bleDeviceManagerCapture, setBleDeviceManagerCapture] =
+    useState<CaptureRn | null>(null);
+  const [socketCamDevice, setSocketCamDevice] =
+    useState<CaptureDeviceInfo | null>(null);
+  const [isContinuousTrigger, setIsContinuousTrigger] =
+    useState<boolean>(false);
+  const [isAndroid, setIsAndroid] = useState<boolean>(false);
+  const [openSocketCamView, setOpenSocketCamView] = useState<boolean>(false);
   // useRef is required to reliably reference component state in a callback
   // that is executed outside of the scope of the component.
   // onCaptureEvent is not called directly by the component, but rather
   // by the capture instance managing events.
-  const stateRef = useRef();
+  const stateRef = useRef<StateData>(initialState);
 
   stateRef.current = {
     devices,
     deviceCapture,
     bleDeviceManagerCapture,
-    socketcamDevice,
+    socketCamDevice,
     deviceGuidMap,
+    isContinuousTrigger,
+    isAndroid,
   };
 
-  const onCaptureEvent = (e, handle) => {
+  const onCaptureEvent = (e: CaptureEvent<any>, handle: number) => {
     if (!e) {
       return;
     }
 
     myLogger.log(`onCaptureEvent from ${handle}: `, e);
-    let devs = stateRef.current.devices;
+    let devs: CaptureDeviceInfo[] = [...stateRef.current.devices];
     switch (e.id) {
       // **********************************
       // Device Arrival Event
@@ -114,7 +150,7 @@ const App = () => {
       // **********************************
       case CaptureEventIds.DeviceArrival:
         const newDevice = new CaptureRn();
-        openDeviceHelper(newDevice, e, false, handle);
+        openDeviceHelper(newDevice, e, false);
         break;
       // **********************************
       // Device Removal Event
@@ -130,44 +166,49 @@ const App = () => {
       //  }
       // **********************************
       case CaptureEventIds.DeviceRemoval:
-        let index = devs.findIndex(d => {
+        let index = devs.findIndex((d: CaptureDeviceInfo) => {
           return d.guid === e.value.guid;
         });
-
         if (index < 0) {
           myLogger.error(`no matching devices found for ${e.value.name}`);
           return;
+        } else {
+          let removeDevice = devs[index];
+          myLogger.log('removeDevice: ', removeDevice?.name);
+          removeDevice!.devCapture
+            .close()
+            .then((result: number) => {
+              myLogger.log('closing a device returns: ', `${result}`);
+              setStatus(`result of closing ${removeDevice?.name}: ${result}`);
+              devs.splice(index, 1);
+              setDevices(devs);
+              let myMap = {...stateRef.current.deviceGuidMap};
+              delete myMap[e.value.guid];
+              setDeviceGuidMap(myMap);
+              let bleDeviceManagerCaptureDev =
+                bleDeviceManagerCapture as CaptureDeviceInfo;
+              if (
+                bleDeviceManagerCaptureDev &&
+                e.value.guid === bleDeviceManagerCaptureDev.guid
+              ) {
+                setBleDeviceManagerCapture(null);
+              } else {
+                setDeviceCapture(null);
+              }
+            })
+            .catch((res: JRpcError) => {
+              let {error} = res;
+              let {message, code} = error;
+              // The error code -38 is related to SocketCam extension closing the SocketCam device when you DISABLE SocketCam on android.
+              // When you disable SocketCam, it closes the device via the extension so there is no need to close it in the React Native side.
+              // It will not show up with other devices and therefore can be ignored.
+              // Other error codes must be handled accordingly.
+              if (code !== -38) {
+                myLogger.error(`error closing a device: ${code}: ${message}`);
+                setStatus(`error closing a device: ${code}: ${message}`);
+              }
+            });
         }
-
-        let removeDevice = devs[index];
-
-        myLogger.log('removeDevice: ', removeDevice.name);
-        removeDevice.device
-          .close()
-          .then(result => {
-            myLogger.log('closing a device returns: ', result);
-            setStatus(`result of closing ${removeDevice.name}: ${result}`);
-            devs = devs.splice(index, 1);
-            setDevices(devs);
-            let myMap = {...stateRef.current.deviceGuidMap};
-            delete myMap[e.value.guid];
-            setDeviceGuidMap(myMap);
-            if (
-              bleDeviceManagerCapture &&
-              e.value.guid === bleDeviceManagerCapture.guid
-            ) {
-              setBleDeviceManagerCapture(null);
-            } else {
-              setDeviceCapture(null);
-              setBatteryLevel('0%');
-            }
-          })
-          .catch(res => {
-            let {error} = res;
-            let {message, code} = error;
-            myLogger.error(`error closing a device: ${code}: ${message}`);
-            setStatus(`error closing a device: ${code}: ${message}`);
-          });
         break;
       // **********************************
       // Decoded Data
@@ -184,21 +225,30 @@ const App = () => {
       //  }
       // **********************************
       case CaptureEventIds.DecodedData:
-        let dev = stateRef.current.devices.find(d => d.handle === handle);
-        if (dev) {
-          setStatus('Decoded Data from ' + dev.name);
+        let devWithInfo = stateRef.current.devices.find(
+          (d: CaptureDeviceInfo) => {
+            return d.handle === handle;
+          },
+        );
+
+        if (devWithInfo) {
+          setStatus('Decoded Data from ' + devWithInfo.name);
+          if (e?.result === SktErrors.ESKT_CANCEL) {
+            setOpenSocketCamView(false);
+            // return here because we don't add this to the decodedDataList as it's a cancel event not a data scan.
+            return;
+          }
+          if (SocketCamTypes.indexOf(devWithInfo.type) > -1) {
+            setOpenSocketCamView(false);
+          }
         } else {
           setStatus('Decoded Data!');
         }
-        setDecodedDataList(prevList => {
-          const newDecodedData = {...lastDecodedData};
-          newDecodedData.id = prevList.length + 1;
-          return [newDecodedData, ...prevList];
-        });
         lastDecodedData = {
           data: arrayToString(e.value.data),
           length: e.value.data.length,
           name: e.value.name,
+          id: -1, //number placeholder
         };
         setDecodedData(lastDecodedData);
         break;
@@ -209,40 +259,60 @@ const App = () => {
       case CaptureEventIds.DeviceManagerRemoval:
         setBleDeviceManagerCapture(null);
         break;
+      case CaptureEventIds.BatteryLevel:
+        console.log('CaptureEventIds.batteryLevel: ', e);
+        setStatus(`Battery has changed to ${e.value}%`);
+        break;
       default:
-        console.log('DEFAULT');
+        console.log('Event not handled: ', e.id);
         break;
     }
   };
 
-  const openDeviceHelper = (dev, e, isManager, handle) => {
+  const handleIsContinuous = (v: boolean) => {
+    setIsContinuousTrigger(v);
+  };
+
+  const genDevice = (
+    dev: CaptureRn,
+    guid: String,
+    name: String,
+    type: number,
+  ) => {
+    return {
+      guid,
+      name,
+      type,
+      handle: dev.clientOrDeviceHandle,
+      devCapture: dev,
+    } as CaptureDeviceInfo;
+  };
+
+  const openDeviceHelper = (
+    dev: CaptureRn,
+    e: CaptureEvent<any>,
+    isManager: boolean,
+  ) => {
     let {name, guid, type} = e.value;
     let loggedOption = isManager ? 'device manager' : 'device';
     dev
       .openDevice(guid, capture)
-      .then(result => {
-        myLogger.log(`opening a ${loggedOption} returns: `, result);
+      .then((result: number) => {
+        myLogger.log(`opening a ${loggedOption} returns: `, `${result}`);
         setStatus(`result of opening ${name} : ${result}`);
         let myMap = {...stateRef.current.deviceGuidMap};
         if (!myMap[guid] && !isManager) {
-          dev.guid = guid;
-          dev.type = type;
-          let device = {
-            guid,
-            name,
-            handle: dev.clientOrDeviceHandle,
-            device: dev,
-          };
+          let device = genDevice(dev, guid, name, type);
           let devs = [...stateRef.current.devices, device];
           setDevices(devs);
-          myMap[guid] = 1;
+          myMap[guid] = '1';
           setDeviceGuidMap(myMap);
         }
         if (!isManager) {
-          // check for socket cam device type
+          // check for SocketCam device type
           if (SocketCamTypes.indexOf(e.value.type) > -1) {
-            setSocketCamHandle(handle);
-            setSocketCamDevice(dev);
+            let device = genDevice(dev, guid, name, type);
+            setSocketCamDevice(device);
           } else {
             setDeviceCapture(dev);
           }
@@ -251,57 +321,42 @@ const App = () => {
           getFavorite(dev);
         }
       })
-      .catch(res => {
-        var {error} = res;
+      .catch((res: JRpcError) => {
+        let {error} = res;
         const {code, message} = error;
         myLogger.error(resToString(error));
         setStatus(`error opening a device: ${code} \n ${message}}`);
       });
   };
 
-  const closeCapture = () => {
-    capture
-      .close()
-      .then(result => {
-        myLogger.log('Success in closing Capture: ', result);
-        setStatus('Success in closing Capture.');
-        setIsOpen(false);
-      })
-      .catch(err => {
-        var error = resToString(err);
-        myLogger.error(`failed to close Capture: ${error}`);
-      });
-  };
-
   useEffect(() => {
+    let isAndroid = Platform.OS === 'android';
+    setIsAndroid(isAndroid);
+    setUseSocketCam(false);
     openCapture();
   }, []);
 
   const openCapture = () => {
     capture
-      .open(appInfo, onCaptureEvent)
-      .then(data => {
-        setStatus('capture open success');
-        setIsOpen(true);
+      .open(appInfo, onCaptureEvent as Notification)
+      .then(() => {
+        setStatus('CaptureSDK open with success');
+        setUseSocketCam(true);
       })
-      .catch(err => {
+      .catch((err: any) => {
         myLogger.error(resToString(err));
         const {error} = err;
         const {code, message} = error;
-        setStatus(`failed to open Capture: ${code} \n ${message}`);
+        setStatus(`Failed to open CaptureSDK: ${code} \n ${message}`);
         // this is for Android which requires Socket Mobile Companion
-        if (err === SktErrors.ESKT_UNABLEOPENDEVICE) {
+        if (code === SktErrors.ESKT_UNABLEOPENDEVICE) {
           setStatus('Is Socket Mobile Companion app installed?');
         }
       });
   };
 
-  const clearAllScans = () => {
-    setDecodedDataList([]);
-  };
-
-  const getFavorite = async dev => {
-    var property = new CaptureProperty(
+  const getFavorite = async (dev: CaptureRn) => {
+    let property = new CaptureProperty(
       CapturePropertyIds.Favorite,
       CapturePropertyTypes.None,
       {},
@@ -316,26 +371,24 @@ const App = () => {
       } else {
         setStatus('Favorite found! Try using an NFC reader!');
       }
-    } catch (err) {
+    } catch (err: any) {
       myLogger.error(`${err.code} : ${err.message}`);
       setStatus(`failed to get favorite: ${err.code} : ${err.message}`);
     }
   };
 
-  const setFavorite = async bleDevice => {
-    var property = new CaptureProperty(
+  const setFavorite = async (bleDevice: CaptureRn) => {
+    let property = new CaptureProperty(
       CapturePropertyIds.Favorite,
       CapturePropertyTypes.String,
       '*',
     );
 
     try {
-      var data = await bleDevice.setProperty(property);
+      let data = await bleDevice.setProperty(property);
       myLogger.log(JSON.stringify(data.value));
-      setStatus(
-        `successfully set favorite for BLE Device Manager: '${newName}' `,
-      );
-    } catch (res) {
+      setStatus(`successfully set favorite for BLE Device Manager!`);
+    } catch (res: any) {
       let {code, message} = res.error;
       myLogger.error(`${code} : ${message}`);
       setStatus(`failed to set favorite: ${code} : ${message}`);
@@ -354,31 +407,25 @@ const App = () => {
         }`}
         editable={false}
       />
-      {!useSocketCam ? (
         <MainView
           deviceCapture={deviceCapture}
           setStatus={setStatus}
           myLogger={myLogger}
+          devices={devices}
         />
-      ) : (
+      {useSocketCam ? (
         <SocketCam
           setStatus={setStatus}
           myLogger={myLogger}
-          socketcamDevice={socketcamDevice}
-          socketCamHandle={socketCamHandle}
-          socketcamCapture={capture}
+          socketCamDevice={socketCamDevice}
+          socketCamCapture={capture}
           clientOrDeviceHandle={capture.clientOrDeviceHandle}
+          handleIsContinuous={handleIsContinuous}
+          isAndroid={isAndroid}
+          openSocketCamView={openSocketCamView}
+          setOpenSocketCamView={setOpenSocketCamView}
         />
-      )}
-      <Footer
-        clearAllScans={clearAllScans}
-        decodedDataList={decodedDataList}
-        isOpen={isOpen}
-        closeCapture={closeCapture}
-        openCapture={openCapture}
-        useSocketCam={useSocketCam}
-        setUseSocketCam={setUseSocketCam}
-      />
+      ) : null}
     </SafeAreaView>
   );
 };

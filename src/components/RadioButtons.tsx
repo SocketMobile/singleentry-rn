@@ -1,13 +1,30 @@
 import React from 'react';
-import {Pressable, View, Text, StyleSheet} from 'react-native';
+import {Pressable, View, Text, StyleSheet, type PressableProps} from 'react-native';
 
-const RadioButtons = ({data, setTriggerType, value, title}) => {
+interface RadioButtonData {
+  label: string;
+  value: string;
+}
+
+interface RadioButtonProps extends PressableProps {
+  title: string;
+  handleTriggerType: Function;
+  value: string;
+  data: RadioButtonData[]
+}
+
+const RadioButtons: React.FC<RadioButtonProps> = ({
+  data,
+  handleTriggerType,
+  value,
+  title,
+}) => {
   return (
     <View style={RadioStyles.container}>
       <Text>{title}</Text>
       {data.map((item, i) => {
         return (
-          <Pressable onPress={() => setTriggerType(item.value)} key={i}>
+          <Pressable onPress={() => handleTriggerType(item.value)} key={i}>
             <Text
               style={
                 item.value === value
@@ -41,6 +58,5 @@ const RadioStyles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: 'lightblue',
     margin: 2,
-    // color: 'white',
   },
 });
